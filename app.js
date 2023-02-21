@@ -7,6 +7,8 @@ const date = require(__dirname + "/date.js");
 const mongoose = require("mongoose");
 var _ = require('lodash');
 
+mongoose.set('strictQuery', true);
+
 mongoose.connect('mongodb+srv://Ken_oshimoto:80eK1UhzUTftTTJp@cluster0.i7qdtbw.mongodb.net/todolistDB');
 
 const app = express();
@@ -147,7 +149,7 @@ app.get("/:newPage", function (req, res) {
 app.get("/about", function (req, res) {
   res.render("about");
 });
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log(`Example app listening on port ${port}!`);
 });
