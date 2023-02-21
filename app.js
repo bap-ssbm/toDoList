@@ -1,59 +1,153 @@
+//jshint esversion:6
+//80eK1UhzUTftTTJp
+//mongosh "mongodb+srv://cluster0.i7qdtbw.mongodb.net/myFirstDatabase" --apiVersion 1 --username Ken_oshimoto
 const express = require("express");
+const bodyParser = require("body-parser");
+const date = require(__dirname + "/date.js");
+const mongoose = require("mongoose");
+var _ = require('lodash');
+
+mongoose.connect('mongodb+srv://Ken_oshimoto:80eK1UhzUTftTTJp@cluster0.i7qdtbw.mongodb.net/todolistDB');
+
 const app = express();
-const port = process.env.PORT || 3001;
 
-app.get("/", (req, res) => res.type('html').send(html));
+app.set('view engine', 'ejs');
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+const itemsSchema = new mongoose.Schema({
+  name: String
+});
+
+const Item = mongoose.model("Item", itemsSchema);
+
+const breakfast = new Item({
+  name: "Hi!"
+});
+
+const study = new Item({
+  name: "add new items with +"
+});
 
 
-const html = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello from Render!</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script>
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true
+
+const defaultItems = [breakfast, study];
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
+
+const List = mongoose.model("List", listSchema);
+
+
+
+app.get("/", function (req, res) {
+
+  const day = date.getDate();
+  Item.find({}, (err, foundItems) => {
+    if (foundItems.length === 0) {
+
+      Item.insertMany(defaultItems, (error) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log("added default items");
+        }
+      });
+      res.redirect("/");
+
+    } else {
+      res.render("list", { listTitle: "Today", newListItems: foundItems });
+      
+    }
+
+
+
+  });
+
+
+
+});
+
+app.post("/", function (req, res) {
+
+  const itemName = req.body.newItem;
+  const listName = req.body.list;
+
+  const newItem = new Item({
+    name: itemName
+  });
+
+  if(listName === "Today"){
+    newItem.save();
+
+    res.redirect("/");
+  
+  }else{
+    List.findOne({name: listName},(err, foundList)=>{
+      foundList.items.push(newItem);
+      foundList.save();
+      res.redirect("/" + listName);
+    });
+  }
+  
+});
+
+
+app.post("/delete", (req, res) => {
+  const checkedItemId = req.body.deleteItem;
+  const listName = req.body.listName;
+
+  if(listName === "Today"){
+    Item.findByIdAndRemove(checkedItemId, (err) => {
+      if (!err) {
+        res.redirect("/");
+        
+      }
+    });
+  }else{
+    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, (err, foundList) =>{
+      if (!err){
+        res.redirect("/" + listName);
+      }
+    })
+  }
+  
+  
+
+
+});
+
+app.get("/:newPage", function (req, res) {
+  const requestedUrl = _.capitalize(req.params.newPage);
+
+  List.findOne({name: requestedUrl}, (err, result)=>{
+    if(!err){
+      if(!result){
+        const list = new List({
+          name: requestedUrl,
+          items: defaultItems
         });
-      }, 500);
-    </script>
-    <style>
-      @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
-      @font-face {
-        font-family: "neo-sans";
-        src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
-        font-style: normal;
-        font-weight: 700;
+      
+        list.save();
+        res.redirect("/" + requestedUrl);
+      }else{
+        res.render("list", { listTitle: result.name, newListItems: result.items });
       }
-      html {
-        font-family: neo-sans;
-        font-weight: 700;
-        font-size: calc(62rem / 16);
-      }
-      body {
-        background: white;
-      }
-      section {
-        border-radius: 1em;
-        padding: 1em;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-right: -50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-  </head>
-  <body>
-    <section>
-      Hello from Render!
-    </section>
-  </body>
-</html>
-`
+     
+    }
+  });
+
+  
+  // res.render("list", { listTitle: "Today", newListItems: foundItems });
+
+});
+
+app.get("/about", function (req, res) {
+  res.render("about");
+});
+const port = process.env.PORT || 3001;
+app.listen(port, function () {
+  console.log(`Example app listening on port ${port}!`);
+});
