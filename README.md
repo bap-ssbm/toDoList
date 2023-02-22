@@ -1,15 +1,11 @@
 # README
 
-This is the [Express](https://expressjs.com) [Hello world](https://expressjs.com/en/starter/hello-world.html) example on [Render](https://render.com).
-
-The app in this repo is deployed at [https://express.onrender.com](https://express.onrender.com).
+This to do list web app was created to practice mongoDB mongoose EJS and nodejs
 
 ## Deployment
 
-See https://render.com/docs/deploy-node-express-app or follow the steps below:
+links->
 
-Create a new web service with the following values:
-  * Build Command: `yarn`
-  * Start Command: `node app.js`
+https://to-do-list-d4my.onrender.com/
 
-That's it! Your web service will be live on your Render URL as soon as the build finishes.
+https://brave-fatigues-bee.cyclic.app/
